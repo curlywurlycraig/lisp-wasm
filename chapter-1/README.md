@@ -1,7 +1,7 @@
 To run this chapter, first build:
 
-`make build`
+`make all`
 
 Then run:
 
-`out/chap1 example.wsp`
+`./out/bins/chap1 example.wsp`
