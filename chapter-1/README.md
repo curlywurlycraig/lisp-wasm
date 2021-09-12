@@ -4,4 +4,4 @@ To run this chapter, first build:
 
 Then run:
 
-`./out/bins/chap1 example.wsp`
+`./out/chap1 -c example.wsp`

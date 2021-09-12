@@ -1,11 +1,46 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
 
 #include <parse.h>
 
-#define MAX_PROGRAM_CHARS 1024
+#define ERROR(...) fprintf(stderr, "ERROR: " __VA_ARGS__)
 
-char* formulaInput;
+struct CliOpts {
+    const char* filename;
+};
+
+static bool parseCliArgs(int argc, char* argv[], struct CliOpts* cli)
+{
+  int opt = 0;
+
+  while ((opt = getopt(argc, argv, "c:")) != -1) {
+    switch (opt) {
+      case 'c': {
+        if (cli->filename) {
+          ERROR("provide single file to compile\n");
+          return false;
+        }
+
+        cli->filename = optarg;
+      }
+      break;
+
+      default: {
+        return false;
+      }
+      break;
+    }
+  }
+
+  if (!cli->filename) {
+      ERROR("provide single file to compile\n");
+      return false;
+  }
+
+  return true;
+}
 
 int main(int argc, char** argv) {
   // Read filename from args
@@ -13,12 +48,18 @@ int main(int argc, char** argv) {
   (void)filename;
   (void)argc;
 
+  struct CliOpts cli = {0};
+
+  if (!parseCliArgs(argc, argv, &cli)) {
+    return EXIT_FAILURE;
+  }
+
   // Read file
-  FILE* fp = fopen("example.wsp", "rb");
+  FILE* fp = fopen(cli.filename, "rb");
 
   if (!fp) {
-    printf("failed to read file.");
-    return 1;
+    ERROR("failed to read file '%s'\n", cli.filename);
+    return EXIT_FAILURE;
   }
 
   fseek(fp, 0, SEEK_END);
@@ -27,8 +68,8 @@ int main(int argc, char** argv) {
   char* programBuffer = malloc(length);
 
   if (!programBuffer) {
-    printf("couldn't allocate program buffer");
-    return 2;
+    ERROR("couldn't allocate program buffer\n");
+    return EXIT_FAILURE;
   }
 
   fread(programBuffer, length, 1, fp);
@@ -49,8 +90,8 @@ int main(int argc, char** argv) {
   List* result = list(parseInfo);
 
   if (result->didFail) {
-    printf("Failed to parse a list");
-    return 3;
+    ERROR("Failed to parse a list\n");
+    return EXIT_FAILURE;
   }
 
   printf("list containing:\n");
@@ -58,9 +99,9 @@ int main(int argc, char** argv) {
     Elem* elem = result->elems[i];
     if (elem->type == E_IDENT) {
       if (elem->val.ident.type == I_VAR) {
-	printf("\t%s\n", elem->val.ident.val.name);
+        printf("\t%s\n", elem->val.ident.val.name);
       } else if (elem->val.ident.type == I_NUM) {
-	printf("\t%f\n", elem->val.ident.val.num);
+        printf("\t%f\n", elem->val.ident.val.num);
       }
     }
   }
