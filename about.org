@@ -1,0 +1,71 @@
+Idea: a compiler from lisp to wasm.
+
+* Chapter 1
+_Just a simple emitter_
+
+Objective: Write a very simple program that reads a simple example of our lang
+and outputs WASM text format.
+
+some_program.wsp -> compiler -> wat
+
+example input
+
+#+BEGIN_SRC clojure
+(defn add
+  "Docstring"
+  [a b]
+  (+ a b))
+#+END_SRC
+
+Expected output 
+
+#+BEGIN_SRC lisp (wat)
+(module
+  (func (export "add") (param i32 i32) (result i32)
+    local.get 0
+    local.get 1
+    i32.add))
+#+END_SRC
+
+Questions: types... it's compiled. How to keep it simple?
+
+Possibilities
+#+BEGIN_SRC clojure
+(defn add
+  "Docstring"
+  [[a:i32 b:i32] i32]
+  (+ a b))
+#+END_SRC
+
+* Cool thoughts
+
+** JIT compilation
+   The compiler itself executes in wasm so the browser (esp. in debugging) can
+  do things like start a repl, or eval from user input etc.
+  
+** JS interop
+
+   Make it really easy to pass through function references (already
+easy with WASM) and call them. Have an object and an array type in our
+lang that seamlessly passes across the ABI. E.g. pass things like
+references to canvas as an object.
+
+** Inline wasm
+
+   A wasm "macro" that inlines some actual wasm
+(defmacro my-wasm-func [some-num]
+  (wasm (some-actual-wasm)))
+** SOA
+ we could try to do something clever whereby we define a struct:
+
+#+BEGIN_SRC clojure
+(defstruct MyStruct
+  {:name str
+   :age i32})
+#+END_SRC
+
+and then define operations that look like immutable transforms:
+
+(defn inc-age
+  [[in:MyStruct] MyStruct]
+  (merge in { :age (inc (:age in)) }))
