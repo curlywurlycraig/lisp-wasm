@@ -53,7 +53,7 @@ typedef struct StateTransition {
 } StateTransition;
 
 typedef struct TokenFinder {
-    StateTransition *transitions;
+    const StateTransition *transitions;
     unsigned int transitionCount;
     Token token;
 } TokenFinder;
