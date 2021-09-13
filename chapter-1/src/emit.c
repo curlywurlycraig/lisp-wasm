@@ -68,6 +68,8 @@ void programToWat(WatList* wat, List** program) {
   WatElem* module = malloc(sizeof(WatElem));
   module->type = WAT_KW;
   module->val.kw = KW_MODULE;
+  elems[0] = module;
+  wat->elemCount++;
 
   // TODO First steps: add a function as defined in program
 }
