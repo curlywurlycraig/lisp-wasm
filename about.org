@@ -55,6 +55,7 @@ references to canvas as an object.
    A wasm "macro" that inlines some actual wasm
 (defmacro my-wasm-func [some-num]
   (wasm (some-actual-wasm)))
+
 ** SOA
  we could try to do something clever whereby we define a struct:
 
