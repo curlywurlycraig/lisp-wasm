@@ -53,7 +53,7 @@ typedef struct StateTransition {
 } StateTransition;
 
 typedef struct TokenFinder {
-    StateTransition *transitions;
+    const StateTransition *transitions;
     unsigned int transitionCount;
     Token token;
 } TokenFinder;
@@ -61,22 +61,6 @@ typedef struct TokenFinder {
 CharType getCharType(char input);
 
 Validity validateRange(char* range, int startIndex, int endIndex, TokenFinder finder);
-
-TokenFinder makeCellrefFinder();
-
-TokenFinder makeNumberFinder();
-
-TokenFinder makeSingleCharacterFinder(CharType type, Token token);
-
-TokenFinder makeRepeatingCharacterFinder(CharType type, Token token);
-
-TokenFinder makeIdentifierFinder();
-
-TokenFinder makeOpenParenFinder();
-
-TokenFinder makeCloseParenFinder();
-
-TokenFinder makeWhitespaceFinder();
 
 void initTokenFinders();
 
@@ -92,6 +76,9 @@ typedef struct TokenizeResult {
     TokenInfo *tokens;
     int tokenCount;
 } TokenizeResult;
+
+TokenFinder makeNumberFinder();
+TokenFinder makeIdentifierFinder();
 
 void tokenize(TokenizeResult* result, char* formula);
 
