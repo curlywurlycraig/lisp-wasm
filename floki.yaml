@@ -1,0 +1,12 @@
+image:
+  build:
+    name: lisp-wasm
+init:
+  - echo
+  - echo "lisp-wasm build container"
+  - echo "========================="
+  - echo
+  - echo "    make all    -  build everything"
+  - echo "    make watch  -  watch for changes and rebuild"
+  - echo "    make clean  -  remove all build artifacts"
+  - echo

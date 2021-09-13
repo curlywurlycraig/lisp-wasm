@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "parse.h"
+
+#include <parse.h>
 
 #define MAX_PROGRAM_CHARS 1024
 
@@ -9,6 +10,8 @@ char* formulaInput;
 int main(int argc, char** argv) {
   // Read filename from args
   char* filename = argv[1];
+  (void)filename;
+  (void)argc;
 
   // Read file
   FILE* fp = fopen("example.wsp", "rb");

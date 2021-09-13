@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "parse.h"
-#include "math.h"
+
+#include <parse.h>
+#include <math.h>
 
 
 
@@ -76,7 +77,7 @@ Validity validateRange(char* range, int startIndex, int endIndex, TokenFinder fi
         CharType nextCharType = getCharType(range[i]);
         int hasValidTransition = 0;
         // find matching transition
-        for (int j = 0; j < finder.transitionCount; j++) {
+        for (unsigned int j = 0; j < finder.transitionCount; j++) {
             StateTransition transition = finder.transitions[j];
             // TODO This will allow repeating periods in number. Need to
             if (transition.fromState.id == currentCharState.id && transition.toState.type == nextCharType) {
@@ -92,7 +93,7 @@ Validity validateRange(char* range, int startIndex, int endIndex, TokenFinder fi
         }
     }
 
-    for (int i = 0; i < finder.transitionCount; i++) {
+    for (unsigned int i = 0; i < finder.transitionCount; i++) {
         StateTransition transition = finder.transitions[i];
         if (transition.fromState.id == currentCharState.id && transition.toState.id == endState.id) {
             return VALID;
@@ -380,7 +381,7 @@ void tokenize(TokenizeResult* result, char* formula) {
 
         while (endIndex <= formulaLen) {
             int anyValid = 0;
-            for (int i = 0; i < numTokenFinders; i++) {
+            for (unsigned int i = 0; i < numTokenFinders; i++) {
                 TokenFinder tokenFinder = tokenFinders[i];
                 Validity validity = validateRange(formula, startIndex, endIndex, tokenFinder);
                 if (validity == VALID) {
@@ -416,7 +417,7 @@ void tokenize(TokenizeResult* result, char* formula) {
     }
 
     // Do one final check
-    for (int i = 0; i < numTokenFinders; i++) {
+    for (unsigned int i = 0; i < numTokenFinders; i++) {
         TokenFinder tokenFinder = tokenFinders[i];
         Validity validity = validateRange(formula, bestStartIndex, endIndex - 1, tokenFinder);
         if (validity == VALID) {
