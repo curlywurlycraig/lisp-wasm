@@ -62,16 +62,6 @@ CharType getCharType(char input);
 
 Validity validateRange(char* range, int startIndex, int endIndex, TokenFinder finder);
 
-TokenFinder makeCellrefFinder();
-
-TokenFinder makeNumberFinder();
-
-TokenFinder makeSingleCharacterFinder(CharType type, Token token);
-
-TokenFinder makeRepeatingCharacterFinder(CharType type, Token token);
-
-TokenFinder makeIdentifierFinder();
-
 void initTokenFinders();
 
 typedef struct TokenInfo {
@@ -86,6 +76,9 @@ typedef struct TokenizeResult {
     TokenInfo *tokens;
     int tokenCount;
 } TokenizeResult;
+
+TokenFinder makeNumberFinder();
+TokenFinder makeIdentifierFinder();
 
 void tokenize(TokenizeResult* result, char* formula);
 
