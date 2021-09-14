@@ -59,6 +59,9 @@ typedef struct WatList {
   unsigned int elemCount;
 } WatList;
 
+/**
+   A program is an array of s-expressions
+ */
 void programToWat(WatList* wat, List** program) {
   WatElem** elems = malloc(sizeof(WatElem*) * 1024);
   wat->elems = elems;
@@ -68,10 +71,16 @@ void programToWat(WatList* wat, List** program) {
   WatElem* module = malloc(sizeof(WatElem));
   module->type = WAT_KW;
   module->val.kw = KW_MODULE;
-  elems[0] = module;
+  elems[wat->elemCount] = module;
   wat->elemCount++;
 
-  // TODO First steps: add a function as defined in program
+  // First steps: add a function as defined in program
+  // For now assuming a program is a single function definition.
+  // TODO Make constructor functions
+
+  WatElem* funcDef = malloc(sizeof(WatElem));
+  funcDef->type = WAT_LIST;
+  funcDef->val.list = funcList;
 }
 
 /**
@@ -83,4 +92,6 @@ void emit(List** program) {
   programToWat(wat, program);
 
   // Stringify the wat
+
+  // And print it to stdout
 }

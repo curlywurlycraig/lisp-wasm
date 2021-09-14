@@ -1,1 +1,9 @@
-(def my-number 1)
+(fun +
+  (x i32 y i32 i32)
+  `wasm(local.get $x
+        local.get $y
+        i32.add))
+
+(fun inc
+  (x i32 i32)
+  (+ 1 x))
