@@ -173,30 +173,60 @@ TokenFinder makeIdentifierFinder() {
     };
 }
 
-#define SINGLE_CHAR_TRANSITIONS(ty) {    				   \
-	{ .fromState = startState, .toState = { .id = 0, .type = (ty) } }, \
-	{ .fromState = { .id = 0, .type = (ty) }, .toState = endState }    \
+static const StateTransition openParenTransitions[] = {
+    {
+	.fromState = startState,
+	.toState = { .id = 0, .type = OPEN_PAREN }
+    },
+    {
+	.fromState = { .id = 0, .type = OPEN_PAREN },
+	.toState = endState
     }
+};
 
-#define REPEATED_CHAR_TRANSITIONS(ty) {    				                  \
-	{ .fromState = startState, .toState = { .id = 0, .type = (ty) } },                \
-	{ .fromState = { .id = 0, .type = (ty) }, .toState = { .id = 0, .type = (ty) } }, \
-	{ .fromState = { .id = 0, .type = (ty) }, .toState = endState }                   \
+static const TokenFinder openParenFinder = {
+    .token = T_OPEN_PAREN,
+    .transitionCount = ARRAY_LENGTH(openParenTransitions),
+    .transitions = openParenTransitions
+};
+
+static const StateTransition closeParenTransitions[] = {
+    {
+	.fromState = startState,
+	.toState = { .id = 0, .type = CLOSE_PAREN }
+    },
+    {
+	.fromState = { .id = 0, .type = CLOSE_PAREN },
+	.toState = endState
     }
+};
 
-#define TOKEN_FINDER_FROM_STATIC_TRANSITION_ARRAY(tok, array) {		\
-	.token = (tok), .transitionCount = ARRAY_LENGTH(array),		\
-	.transitions = array					        \
-	}
+static const TokenFinder closeParenFinder = {
+    .token = T_CLOSE_PAREN,
+    .transitionCount = ARRAY_LENGTH(closeParenTransitions),
+    .transitions = closeParenTransitions
+};
 
-static const StateTransition openParenTransitions[] = SINGLE_CHAR_TRANSITIONS(OPEN_PAREN);
-static const TokenFinder openParenFinder = TOKEN_FINDER_FROM_STATIC_TRANSITION_ARRAY(T_OPEN_PAREN, openParenTransitions);
+static const StateTransition whitespaceTransitions[] = {
+    {
+	.fromState = startState,
+	.toState = { .id = 0, .type = SPACE }
+    },
+    {
+	.fromState = { .id = 0, .type = SPACE },
+	.toState   = { .id = 0, .type = SPACE }
+    },
+    {
+	.fromState = { .id = 0, .type = SPACE },
+	.toState = endState
+    }
+};
 
-static const StateTransition closeParenTransitions[] = SINGLE_CHAR_TRANSITIONS(CLOSE_PAREN);
-static const TokenFinder closeParenFinder = TOKEN_FINDER_FROM_STATIC_TRANSITION_ARRAY(T_CLOSE_PAREN, closeParenTransitions);
-
-static const StateTransition whitespaceTransitions[] = REPEATED_CHAR_TRANSITIONS(SPACE);
-static const TokenFinder whitespaceFinder = TOKEN_FINDER_FROM_STATIC_TRANSITION_ARRAY(T_WHITESPACE, whitespaceTransitions);
+static const TokenFinder whitespaceFinder = {
+    .token = T_WHITESPACE,
+    .transitionCount = ARRAY_LENGTH(whitespaceTransitions),
+    .transitions = whitespaceTransitions
+};
 
 void initTokenFinders() {
     TokenFinder finders[] = {
