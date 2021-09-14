@@ -33,3 +33,17 @@ Alternatively, we can just use s-expressions normally:
 ```
 
 This is more "Lispy", and perhaps the parsing of our program into an AST won't present any difficulties.
+
+## Reference WAT
+
+```
+(module
+  (func $+ (export "+") (param i32 i32) (result i32)
+    local.get 0
+    local.get 1
+    i32.add)
+  (func $inc (export "inc") (param i32) (result i32)
+  	local.get 0
+    i32.const 1
+    call $+))
+```

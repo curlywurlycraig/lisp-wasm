@@ -170,6 +170,8 @@ typedef struct List {
     int elemCount;
 } List;
 
+char* elemIdentName(Elem* elem);
+
 List* list(ParseInfo *info);
 
 Elem* elem(ParseInfo *info);

@@ -493,6 +493,9 @@ List* list(ParseInfo *info) {
 
     // Function token is just for evalling
 
+    // TODO: Don't hard code max elem count.
+    // Instead, the List structure should probably be stored
+    // as a linked list
     Elem** elems = malloc(sizeof(Elem*) * 128);
     unsigned int argc = 0;
     while (!expect(info, T_CLOSE_PAREN) && !info->didFail) {
@@ -568,4 +571,8 @@ Elem* elem(ParseInfo *info) {
 
 
     return 0;
+}
+
+char* elemIdentName(Elem* elem) {
+  return elem->val.ident.val.name;
 }
