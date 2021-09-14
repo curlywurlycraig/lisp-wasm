@@ -143,27 +143,20 @@ TokenFinder makeNumberFinder() {
     };
 }
 
-TokenFinder makeSingleCharacterFinder(CharType type, Token token) {
-    const CharState charState = { .id = 0, .type = type };
+#define SINGLE_CHAR_TRANSITIONS(ty) {    				   \
+	{ .fromState = startState, .toState = { .id = 0, .type = (ty) } }, \
+	{ .fromState = { .id = 0, .type = (ty) }, .toState = endState }    \
+    }
 
-    TokenFinder charFinder = { .token = token, .transitionCount = 2 };
+#define TOKEN_FINDER_FROM_STATIC_TRANSITION_ARRAY(tok, array) {		\
+	.token = (tok), .transitionCount = ARRAY_LENGTH(array),		\
+	.transitions = array					        \
+	}
 
-    StateTransition* transitions = malloc(sizeof(StateTransition) * charFinder.transitionCount);
-
-    transitions[0] = (StateTransition) {
-        .fromState = startState,
-        .toState = charState
-    };
-
-    transitions[1] = (StateTransition) {
-        .fromState = charState,
-        .toState = endState
-    };
-
-    charFinder.transitions = transitions;
-
-    return charFinder;
-}
+static const StateTransition openParenTransitions[] = SINGLE_CHAR_TRANSITIONS(OPEN_PAREN);
+static const TokenFinder openParenFinder = TOKEN_FINDER_FROM_STATIC_TRANSITION_ARRAY(T_OPEN_PAREN, openParenTransitions);
+static const StateTransition closeParenTransitions[] = SINGLE_CHAR_TRANSITIONS(CLOSE_PAREN);
+static const TokenFinder closeParenFinder = TOKEN_FINDER_FROM_STATIC_TRANSITION_ARRAY(T_CLOSE_PAREN, closeParenTransitions);
 
 TokenFinder makeRepeatingCharacterFinder(CharType type, Token token) {
     const CharState charState = { .id = 0, .type = type };
@@ -220,14 +213,6 @@ TokenFinder makeIdentifierFinder() {
     };
 }
 
-TokenFinder makeOpenParenFinder() {
-    return makeSingleCharacterFinder(OPEN_PAREN, T_OPEN_PAREN);
-}
-
-TokenFinder makeCloseParenFinder() {
-    return makeSingleCharacterFinder(CLOSE_PAREN, T_CLOSE_PAREN);
-}
-
 TokenFinder makeWhitespaceFinder() {
     return makeRepeatingCharacterFinder(SPACE, T_WHITESPACE);
 }
@@ -240,9 +225,9 @@ void initTokenFinders() {
     numTokenFinders++;
     tokenFinders[1] = makeWhitespaceFinder();
     numTokenFinders++;
-    tokenFinders[2] = makeOpenParenFinder();
+    tokenFinders[2] = openParenFinder;
     numTokenFinders++;
-    tokenFinders[3] = makeCloseParenFinder();
+    tokenFinders[3] = closeParenFinder;
     numTokenFinders++;
     tokenFinders[4] = makeIdentifierFinder();
     numTokenFinders++;

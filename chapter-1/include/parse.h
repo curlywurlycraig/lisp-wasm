@@ -72,10 +72,6 @@ TokenFinder makeRepeatingCharacterFinder(CharType type, Token token);
 
 TokenFinder makeIdentifierFinder();
 
-TokenFinder makeOpenParenFinder();
-
-TokenFinder makeCloseParenFinder();
-
 TokenFinder makeWhitespaceFinder();
 
 void initTokenFinders();
