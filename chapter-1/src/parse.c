@@ -5,6 +5,9 @@
 #include <parse.h>
 #include <math.h>
 
+#include <assert.h>
+#define BUG(assertion)  // used to temporarily disable an assert that shouldn't fail
+
 #define ARRAY_LENGTH(a) sizeof(a) / sizeof((a)[0])
 
 TokenFinder* tokenFinders;
@@ -316,6 +319,7 @@ void tokenize(TokenizeResult* result, char* formula) {
 // Parse
 
 TokenInfo lookAhead(ParseInfo *info, int ahead) {
+    BUG(assert(info->tokenIndex + ahead < info->tokenizeResult->tokenCount));
     return info->tokenizeResult->tokens[info->tokenIndex + ahead];
 }
 
