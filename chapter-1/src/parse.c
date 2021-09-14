@@ -199,19 +199,20 @@ TokenFinder makeIdentifierFinder() {
 }
 
 void initTokenFinders() {
-    numTokenFinders = 0;
-    tokenFinders = malloc(sizeof(TokenFinder) * MAX_FINDERS);
+    TokenFinder finders[] = {
+      makeNumberFinder(),
+      whitespaceFinder,
+      openParenFinder,
+      closeParenFinder,
+      makeIdentifierFinder(),
+      makeCellrefFinder(),
+    };
 
-    tokenFinders[0] = makeNumberFinder();
-    numTokenFinders++;
-    tokenFinders[1] = whitespaceFinder;
-    numTokenFinders++;
-    tokenFinders[2] = openParenFinder;
-    numTokenFinders++;
-    tokenFinders[3] = closeParenFinder;
-    numTokenFinders++;
-    tokenFinders[4] = makeIdentifierFinder();
-    numTokenFinders++;
+    TokenFinder* copy = malloc(sizeof(finders));
+    memcpy(copy, finders, sizeof(finders));
+
+    numTokenFinders = ARRAY_LENGTH(finders);
+    tokenFinders = copy;
 }
 
 void tokenize(TokenizeResult* result, char* formula) {
