@@ -72,8 +72,6 @@ TokenFinder makeRepeatingCharacterFinder(CharType type, Token token);
 
 TokenFinder makeIdentifierFinder();
 
-TokenFinder makeWhitespaceFinder();
-
 void initTokenFinders();
 
 typedef struct TokenInfo {

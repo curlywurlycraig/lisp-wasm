@@ -148,6 +148,12 @@ TokenFinder makeNumberFinder() {
 	{ .fromState = { .id = 0, .type = (ty) }, .toState = endState }    \
     }
 
+#define REPEATED_CHAR_TRANSITIONS(ty) {    				                  \
+	{ .fromState = startState, .toState = { .id = 0, .type = (ty) } },                \
+	{ .fromState = { .id = 0, .type = (ty) }, .toState = { .id = 0, .type = (ty) } }, \
+	{ .fromState = { .id = 0, .type = (ty) }, .toState = endState }                   \
+    }
+
 #define TOKEN_FINDER_FROM_STATIC_TRANSITION_ARRAY(tok, array) {		\
 	.token = (tok), .transitionCount = ARRAY_LENGTH(array),		\
 	.transitions = array					        \
@@ -155,33 +161,12 @@ TokenFinder makeNumberFinder() {
 
 static const StateTransition openParenTransitions[] = SINGLE_CHAR_TRANSITIONS(OPEN_PAREN);
 static const TokenFinder openParenFinder = TOKEN_FINDER_FROM_STATIC_TRANSITION_ARRAY(T_OPEN_PAREN, openParenTransitions);
+
 static const StateTransition closeParenTransitions[] = SINGLE_CHAR_TRANSITIONS(CLOSE_PAREN);
 static const TokenFinder closeParenFinder = TOKEN_FINDER_FROM_STATIC_TRANSITION_ARRAY(T_CLOSE_PAREN, closeParenTransitions);
 
-TokenFinder makeRepeatingCharacterFinder(CharType type, Token token) {
-    const CharState charState = { .id = 0, .type = type };
-
-    TokenFinder charFinder = { .token = token, .transitionCount = 3 };
-
-    StateTransition* transitions = malloc(sizeof(StateTransition) * charFinder.transitionCount);
-
-    transitions[0] = (StateTransition) {
-        .fromState = startState,
-        .toState = charState
-    };
-    transitions[1] = (StateTransition) {
-        .fromState = charState,
-        .toState = charState
-    };
-    transitions[2] = (StateTransition) {
-        .fromState = charState,
-        .toState = endState
-    };
-
-    charFinder.transitions = transitions;
-
-    return charFinder;
-}
+static const StateTransition whitespaceTransitions[] = REPEATED_CHAR_TRANSITIONS(SPACE);
+static const TokenFinder whitespaceFinder = TOKEN_FINDER_FROM_STATIC_TRANSITION_ARRAY(T_WHITESPACE, whitespaceTransitions);
 
 TokenFinder makeIdentifierFinder() {
     static const CharState charState   = { .id = 0, .type = LETTER };
@@ -213,17 +198,13 @@ TokenFinder makeIdentifierFinder() {
     };
 }
 
-TokenFinder makeWhitespaceFinder() {
-    return makeRepeatingCharacterFinder(SPACE, T_WHITESPACE);
-}
-
 void initTokenFinders() {
     numTokenFinders = 0;
     tokenFinders = malloc(sizeof(TokenFinder) * MAX_FINDERS);
 
     tokenFinders[0] = makeNumberFinder();
     numTokenFinders++;
-    tokenFinders[1] = makeWhitespaceFinder();
+    tokenFinders[1] = whitespaceFinder;
     numTokenFinders++;
     tokenFinders[2] = openParenFinder;
     numTokenFinders++;
