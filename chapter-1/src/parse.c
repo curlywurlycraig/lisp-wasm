@@ -574,5 +574,11 @@ Elem* elem(ParseInfo *info) {
 }
 
 char* elemIdentName(Elem* elem) {
+  // TODO Error handling when trying to get ident name from
+  // elem with wrong type.
   return elem->val.ident.val.name;
+}
+
+List* elemList(Elem* elem) {
+  return elem->val.list;
 }

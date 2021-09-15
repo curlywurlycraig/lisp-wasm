@@ -44,95 +44,126 @@ typedef struct WatList {
   unsigned int elemCount;
 } WatList;
 
-void watElem(WatElem* result, WatType type) {
+WatElem* watElem() {
+  return malloc(sizeof(WatElem));
+}
+
+WatElem* watKeyword(WatType type) {
+  WatElem* result = watElem();
   result->type = type;
+  return result;
+}
+
+WatElem* watType(WatType type) {
+  return watKeyword(type);
 }
 
 // TODO Intern strings and pass those around, instead of char arrays
-void watStringLiteral(WatElem* result, char* name) {
+WatElem* watStringLiteral(char* name) {
+  WatELem* result = watElem();
   result->type = WAT_LITERAL;
   result->val.str = name;
+  return result;
 }
 
-void watVar(WatElem* result, char* name) {
+WatElem* watVar(char* name) {
+  WatElem* result = watElem();
   result->type = WAT_VAR;
   result->val.str = name;
+  return result;
 }
 
-void watList(WatElem* result) {
-  WatList funcList = (WatList) {
+WatElem* watList() {
+  WatElem* result = watElem();
+  WatList list = (WatList) {
     .elems = malloc(sizeof(WatElem*) * 128); // TODO: Don't hard code this
     .elemCount = 0
   };
   result->type = WAT_LIST;
-  result->val.list = funcList;
+  result->val.list = list;
+  return result;
 }
 
-void watListInsert(WatList* list, WatElem* elem) {
+void watListInsert(WatElem* listElem, WatElem* elem) {
+  WatList* list = &(listElem->val.list);
   list->elems[list->elemCount] = elem;
   list->elemCount++;
+}
+
+void watInsertAllParams(WatElem* result, List* paramList) {
+  for (int i = 0; i < paramList.length; i+=2) {
+    if (i == paramList.length - 1 && i % 2 == 0) {
+      // Return type
+      WatElem* resultKW = watKeyword(WAT_KW_RESULT);
+
+      //Elem* returnTypeIdent = paramList.elems[i];
+      // TODO Read the type instead of hard-coding i32
+      WatElem* returnTypeElem = watType(WAT_TYPE_I32);
+
+      WatElem* resultList = watList();
+      watListInsert(resultList, resultKW);
+      watListInsert(resultList, returnTypeElem);
+      watListInsert(result, resultList);
+    } else {
+      WatElem* paramKW = watKeyword(WAT_KW_PARAM);
+
+      Elem* paramNameIdent = paramList.elems[i];
+      char* paramName = elemIdentName(paramNameIdent);
+      WatElem* paramNameElem = watVar(paramName);
+
+      // Elem* paramTypeIdent = paramList.elems[i+1];
+      // TODO Read the type instead of hard-coding i32
+      WatElem* paramTypeElem = watType(WAT_TYPE_I32);
+
+      WatElem* resultList = watList();
+      watListInsert(resultList, paramKW);
+      watListInsert(resultList, paramNameElem);
+      watListInsert(resultList, paramTypeElem);
+      watListInsert(result, resultList);
+    }
+  }
 }
 
 void funcToWat(WatElem* result, List* list) {
   watList(result);
 
-  WatElem* funcKW = malloc(sizeof(WatElem));
-  watElem(funcKW, WAT_KW_FUNC)
-  watListInsert(&funcList, funcKW);
+  WatElem* funcKW = watKeyword(WAT_KW_FUNC)
+  watListInsert(result, funcKW);
 
-  char* funcNameStr = elemIdentName(list->elems[0]);
-  WatElem* funcNameElem = malloc(sizeof(WatElem));
-  watVar(funcNameElem, funcNameStr);
-  watListInsert(&funcList, funcNameElem);
+  char* funcNameStr = elemIdentName(list->elems[1]);
+  WatElem* funcNameElem = watVar(funcNameStr);
+  watListInsert(result, funcNameElem);
 
-  WatElem* exportList = malloc(sizeof(WatElem));
-  watList(exportList);
-  WatElem* exportKW = malloc(sizeof(WatElem));
-  watElem(exportKW, WAT_KW_EXPORT);
-  WatElem* funcNameExportLiteral = malloc(sizeof(WatElem));
-  watStringLiteral(funcNameExportLiteral, funcNameStr);
-  watListInsert(&(exportList->val.list), exportKW);
-  watListInsert(&(exportList->val.list), funcNameExportLiteral);
+  WatElem* exportList = watList();
+  WatElem* exportKW = watKeyword(WAT_KW_EXPORT);
+  WatElem* funcNameExportLiteral = watStringLiteral(funcNameStr);
+  watListInsert(exportList), exportKW);
+  watListInsert(exportList), funcNameExportLiteral);
 
-  // Add param list
-
-  // Add result list
+  List* paramList = elemList(list->elems[2]);
+  watInsertAllParams(result, paramList);
 
   // Finally add the body
-  
   // Add all the list elems to the funcList body
   for (int i = 0; i < list->elemCount; i++) {
-
+    // TODO Stopping here for the night.
   }
 }
 
 /**
    A program is an array of s-expressions
  */
-void programToWat(WatList* wat, Program* program) {
-  WatElem** elems = malloc(sizeof(WatElem*) * 1024);
-  wat->elems = elems;
-  wat->elemCount = 0;
-
+void programToWat(WatElem* wat, Program* program) {
   // All WASM programs have a module keyword
-  WatElem* module = malloc(sizeof(WatElem));
-  module->type = WAT_KW;
-  module->val.kw = KW_MODULE;
-  elems[wat->elemCount] = module;
-  wat->elemCounf++;
-
-  // First steps: add a function as defined in program
-  // For now assuming only function definitions can be expressed
+  WatElem* moduleKW = watKeyword(WAT_KW_MODULE);
+  watListInsert(wat, moduleKW);
 
   for (int i = 0; i < program->listCount; i++) {
     List* list = program->lists[i];
-    WatElem* nextElem = malloc(sizeof(WatElem));
-    funcToWat
+    WatElem* nextElem = watList();
+    funcToWat(nextElem, list);
+    watListInsert(nextElem);
   }
-
-  WatElem* funcDef = malloc(sizeof(WatElem));
-  funcDef->type = WAT_LIST;
-  funcDef->val.list = funcList;
 }
 
 /**
@@ -140,7 +171,7 @@ void programToWat(WatList* wat, Program* program) {
  */
 
 void emit(List** program) {
-  WatList* wat = malloc(sizeof(WatList));
+  WatElem* wat = watList();
   programToWat(wat, program);
 
   // Stringify the wat

@@ -38,12 +38,12 @@ This is more "Lispy", and perhaps the parsing of our program into an AST won't p
 
 ```
 (module
-  (func $+ (export "+") (param i32 i32) (result i32)
-    local.get 0
-    local.get 1
+  (func $+ (export "+") (param $x i32) (param $y i32) (result i32)
+    local.get $x
+    local.get $y
     i32.add)
-  (func $inc (export "inc") (param i32) (result i32)
-  	local.get 0
+  (func $inc (export "inc") (param $x i32) (result i32)
+  	local.get x
     i32.const 1
     call $+))
 ```
