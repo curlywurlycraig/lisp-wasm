@@ -5,8 +5,6 @@
 
 typedef enum WatElemType {
   WAT_VAR,
-  WAT_KW,
-  WAT_TYPE,
   WAT_LITERAL,
   WAT_LIST,
   WAT_STRING_LITERAL,
@@ -71,6 +69,16 @@ void watInsertAllParams(WatElem* result, List* paramList);
 void funcToWat(WatElem* result, List* list);
 
 void programToWat(WatElem* wat, Program* program);
+
+void printWatStrType(WatElem* wat);
+
+void printWatStrLiteral(WatElem* wat);
+
+void printWatNumberLiteral(WatElem* wat);
+
+void printWatList(WatElem* wat);
+
+void printWatElem(WatElem* wat);
 
 void emit(Program* program);
 

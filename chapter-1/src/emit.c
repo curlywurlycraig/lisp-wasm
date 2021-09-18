@@ -1,5 +1,7 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <parse.h>
 #include <emit.h>
 
@@ -31,7 +33,7 @@ WatElem* watType(WatElemType type) {
 // TODO Intern strings and pass those around, instead of char arrays
 WatElem* watStringLiteral(char* name) {
   WatElem* result = watElem();
-  result->type = WAT_LITERAL;
+  result->type = WAT_STRING_LITERAL;
   result->val.str = name;
   return result;
 }
@@ -106,6 +108,7 @@ void funcToWat(WatElem* result, List* list) {
   WatElem* funcNameExportLiteral = watStringLiteral(funcNameStr);
   watListInsert(exportList, exportKW);
   watListInsert(exportList, funcNameExportLiteral);
+  watListInsert(result, exportList);
 
   List* paramList = elemList(list->elems[2]);
   watInsertAllParams(result, paramList);
@@ -123,7 +126,7 @@ void funcToWat(WatElem* result, List* list) {
     // Check the first identifier
     // if the element is "wasm", just straight up copy
 
-    if (strcmp(elemIdentName(expressionList->elems[0]), "wasm")) {
+    if (!strcmp(elemIdentName(expressionList->elems[0]), "wasm")) {
       // add the rest, bypassing any categorisation (just using raw).
       // TODO Consider actually parsing each one. This would be nice
       // because we could show errors for malformed WASM
@@ -158,11 +161,80 @@ void programToWat(WatElem* wat, Program* program) {
    Wat string output generation
  */
 
+void printWatStrType(WatElem* wat) {
+  printf("%s", wat->val.str);
+}
+
+void printWatStrLiteral(WatElem* wat) {
+  printf("\"");
+  printWatStrType(wat);
+  printf("\"");
+}
+
+void printWatNumberLiteral(WatElem* wat) {
+  printf("%d", wat->val.i32);
+}
+
+void printWatList(WatElem* wat) {
+  WatList* watList = wat->val.list;
+  printf("(");
+  for (unsigned int i = 0; i < watList->elemCount; i++) {
+    printWatElem(watList->elems[i]);
+    if (i != watList->elemCount - 1) {
+	printf(" ");
+    }
+  }
+  printf(")");
+}
+
+void printWatElem(WatElem* wat) {
+  switch (wat->type) {
+  case WAT_VAR:
+  case WAT_LITERAL:
+  case WAT_RAW:
+    printWatStrType(wat);
+    break;
+  case WAT_LIST:
+    printWatList(wat);
+    break;
+  case WAT_STRING_LITERAL:
+    printWatStrLiteral(wat);
+    break;
+  case WAT_NUMBER_LITERAL:
+    printWatNumberLiteral(wat);
+    break;
+  case WAT_OP_I32_ADD:
+    printf("i32.add");
+    break;
+  case WAT_OP_LOCAL_GET:
+    printf("local.get");
+    break;
+  case WAT_TYPE_I32:
+    printf("i32");
+    break;
+  case WAT_KW_MODULE:
+    printf("module");
+    break;
+  case WAT_KW_FUNC:
+    printf("func");
+    break;
+  case WAT_KW_EXPORT:
+    printf("export");
+    break;
+  case WAT_KW_PARAM:
+    printf("param");
+    break;
+  case WAT_KW_RESULT:
+    printf("result");
+    break;
+  default:
+    // TODO Handle error case
+    return;
+  }
+}
+
 void emit(Program* program) {
   WatElem* wat = watList();
   programToWat(wat, program);
-
-  // Stringify the wat
-
-  // And print it to stdout
+  printWatElem(wat);
 }

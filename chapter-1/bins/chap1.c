@@ -76,8 +76,6 @@ int main(int argc, char** argv) {
   fread(programBuffer, length, 1, fp);
   fclose(fp);
 
-  printf("read program.\n%s\n", programBuffer);
-
   // Do simple compilation
   initTokenFinders();
   TokenizeResult* tokens = malloc(sizeof(TokenizeResult));
@@ -97,9 +95,7 @@ int main(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  printf("converting parsed program to WAT AST...\n");
   emit(parsedProgram);
-  printf("\033[0;32msuccess.\033[0m\n");
 
   return 0;
 }
