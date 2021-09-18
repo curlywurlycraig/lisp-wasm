@@ -4,6 +4,7 @@
 #include <getopt.h>
 
 #include <parse.h>
+#include <emit.h>
 
 #define ERROR(...) fprintf(stderr, "ERROR: " __VA_ARGS__)
 
@@ -75,6 +76,8 @@ int main(int argc, char** argv) {
   fread(programBuffer, length, 1, fp);
   fclose(fp);
 
+  printf("read program.\n%s\n", programBuffer);
+
   // Do simple compilation
   initTokenFinders();
   TokenizeResult* tokens = malloc(sizeof(TokenizeResult));
@@ -87,24 +90,16 @@ int main(int argc, char** argv) {
   parseInfo->tokenizeResult = tokens;
   parseInfo->raw = programBuffer;
 
-  List* result = list(parseInfo);
+  Program* parsedProgram = program(parseInfo);
 
-  if (result->didFail) {
-    ERROR("Failed to parse a list\n");
+  if (parseInfo->didFail) {
+    ERROR("Failed to parse a program\n");
     return EXIT_FAILURE;
   }
 
-  printf("list containing:\n");
-  for (int i = 0; i < result->elemCount; i++) {
-    Elem* elem = result->elems[i];
-    if (elem->type == E_IDENT) {
-      if (elem->val.ident.type == I_VAR) {
-        printf("\t%s\n", elem->val.ident.val.name);
-      } else if (elem->val.ident.type == I_NUM) {
-        printf("\t%f\n", elem->val.ident.val.num);
-      }
-    }
-  }
+  printf("converting parsed program to WAT AST...\n");
+  emit(parsedProgram);
+  printf("\033[0;32msuccess.\033[0m\n");
 
   return 0;
 }

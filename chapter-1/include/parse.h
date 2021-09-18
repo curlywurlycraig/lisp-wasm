@@ -170,6 +170,11 @@ typedef struct List {
     int elemCount;
 } List;
 
+typedef struct Program {
+  unsigned int listCount;
+  List** lists;
+} Program;
+
 char* elemIdentName(Elem* elem);
 
 List* elemList(Elem* elem);
@@ -177,5 +182,7 @@ List* elemList(Elem* elem);
 List* list(ParseInfo *info);
 
 Elem* elem(ParseInfo *info);
+
+Program* program(ParseInfo *info);
 
 #endif

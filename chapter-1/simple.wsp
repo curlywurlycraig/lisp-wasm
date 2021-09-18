@@ -1,0 +1,5 @@
+(fun +
+  (x i32 y i32 i32)
+  (wasm local.get $x
+        local.get $y
+        i32.add))

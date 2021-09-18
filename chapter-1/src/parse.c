@@ -5,8 +5,6 @@
 #include <parse.h>
 #include <math.h>
 
-
-
 TokenFinder* tokenFinders;
 unsigned int numTokenFinders;
 
@@ -55,6 +53,11 @@ CharType getCharType(char input) {
     if (input == '?') {
         return LETTER;
     }
+    
+    // WASM variables like $a
+    if (input == '$') {
+        return LETTER;
+    }
 
     if (input == '(') {
         return OPEN_PAREN;
@@ -79,7 +82,6 @@ Validity validateRange(char* range, int startIndex, int endIndex, TokenFinder fi
         // find matching transition
         for (unsigned int j = 0; j < finder.transitionCount; j++) {
             StateTransition transition = finder.transitions[j];
-            // TODO This will allow repeating periods in number. Need to
             if (transition.fromState.id == currentCharState.id && transition.toState.type == nextCharType) {
                 hasValidTransition = 1;
 
@@ -101,68 +103,6 @@ Validity validateRange(char* range, int startIndex, int endIndex, TokenFinder fi
     }
 
     return PARTIAL;
-}
-
-TokenFinder makeCellrefFinder() {
-    CharState colonState;
-    colonState.id = 0;
-    colonState.type = COLON;
-
-    CharState letterState;
-    letterState.id = 1;
-    letterState.type = LETTER;
-
-    CharState numberState;
-    numberState.id = 2;
-    numberState.type = DIGIT;
-
-    CharState hyphenState;
-    hyphenState.id = 3;
-    hyphenState.type = HYPHEN;
-
-    TokenFinder cellrefFinder;
-    cellrefFinder.token = T_CELLREF;
-    cellrefFinder.transitionCount = 9;
-    cellrefFinder.transitions = malloc(sizeof(StateTransition) * cellrefFinder.transitionCount);
-
-    cellrefFinder.transitions[0] = (StateTransition) {
-        .fromState = startState,
-        .toState = colonState
-    };
-    cellrefFinder.transitions[1] = (StateTransition) {
-        .fromState = colonState,
-        .toState = letterState
-    };
-    cellrefFinder.transitions[2] = (StateTransition) {
-        .fromState = letterState,
-        .toState = numberState
-    };
-    cellrefFinder.transitions[3] = (StateTransition) {
-        .fromState = numberState,
-        .toState = endState
-    };
-    cellrefFinder.transitions[4] = (StateTransition) {
-        .fromState = letterState,
-        .toState = letterState
-    };
-    cellrefFinder.transitions[5] = (StateTransition) {
-        .fromState = numberState,
-        .toState = numberState
-    };
-    cellrefFinder.transitions[6] = (StateTransition) {
-        .fromState = numberState,
-        .toState = hyphenState
-    };
-    cellrefFinder.transitions[7] = (StateTransition) {
-        .fromState = hyphenState,
-        .toState = colonState
-    };
-    cellrefFinder.transitions[8] = (StateTransition) {
-        .fromState = letterState,
-        .toState = endState
-    };
-
-    return cellrefFinder;
 }
 
 TokenFinder makeNumberFinder() {
@@ -293,9 +233,17 @@ TokenFinder makeIdentifierFinder() {
     hyphenState.id = 1;
     hyphenState.type = HYPHEN;
 
+    CharState periodState;
+    periodState.id = 2;
+    periodState.type = PERIOD;
+
+    CharState numberState;
+    numberState.id = 3;
+    numberState.type = DIGIT;
+
     TokenFinder identFinder;
     identFinder.token = T_IDENT;
-    identFinder.transitionCount = 7;
+    identFinder.transitionCount = 14;
     identFinder.transitions = malloc(sizeof(StateTransition) * identFinder.transitionCount);
 
     identFinder.transitions[0] = (StateTransition) {
@@ -312,18 +260,46 @@ TokenFinder makeIdentifierFinder() {
     };
     identFinder.transitions[3] = (StateTransition) {
         .fromState = charState,
-        .toState = hyphenState 
+        .toState = numberState
     };
     identFinder.transitions[4] = (StateTransition) {
+        .fromState = numberState,
+        .toState = periodState
+    };
+    identFinder.transitions[5] = (StateTransition) {
+        .fromState = numberState,
+        .toState = hyphenState
+    };
+    identFinder.transitions[6] = (StateTransition) {
+        .fromState = numberState,
+        .toState = numberState
+    };
+    identFinder.transitions[7] = (StateTransition) {
+        .fromState = charState,
+        .toState = periodState
+    };
+    identFinder.transitions[8] = (StateTransition) {
+        .fromState = periodState,
+        .toState = charState
+    };
+    identFinder.transitions[9] = (StateTransition) {
+        .fromState = charState,
+        .toState = hyphenState 
+    };
+    identFinder.transitions[10] = (StateTransition) {
         .fromState = charState,
         .toState = endState
     };
-    identFinder.transitions[5] = (StateTransition) {
+    identFinder.transitions[11] = (StateTransition) {
         .fromState = hyphenState,
         .toState = charState
     };
-    identFinder.transitions[6] = (StateTransition) {
+    identFinder.transitions[12] = (StateTransition) {
         .fromState = hyphenState,
+        .toState = endState
+    };
+    identFinder.transitions[13] = (StateTransition) {
+        .fromState = numberState,
         .toState = endState
     };
 
@@ -361,8 +337,6 @@ void initTokenFinders() {
     tokenFinders[3] = makeCloseParenFinder();
     numTokenFinders++;
     tokenFinders[4] = makeIdentifierFinder();
-    numTokenFinders++;
-    tokenFinders[5] = makeCellrefFinder();
     numTokenFinders++;
 }
 
@@ -450,6 +424,48 @@ void next(ParseInfo *info) {
     if (info->tokenIndex >= info->tokenizeResult->tokenCount) {
         info->reachedEnd = 1;
     }
+}
+
+void printRemain(ParseInfo *info) {
+  printf("There are %d tokens left\n", info->tokenizeResult->tokenCount - info->tokenIndex);
+  printf("The next token is %s\n", lookAhead(info, 0).raw);
+}
+
+void printToken(Token token) {
+  switch (token) {
+  case T_NO_TOKEN:
+    printf("NO TOKEN");
+    break;
+  case T_NUMBER:
+    printf("NUMBER");
+    break;
+  case T_MULT:
+    printf("MULTIPLY");
+    break;
+  case T_NEG:
+    printf("NEGATIVE");
+    break;
+  case T_PLUS:
+    printf("ADD");
+    break;
+  case T_OPEN_PAREN:
+    printf("OPEN PAREN");
+    break;
+  case T_CLOSE_PAREN:
+    printf("CLOSE PAREN");
+    break;
+  case T_WHITESPACE:
+    printf("WHITESPACE");
+    break;
+  case T_IDENT:
+    printf("IDENTIFIER");
+    break;
+  case T_DIV:
+    printf("DIVISION");
+    break;
+  default:
+    printf("UNKNOWN TOKEN");
+  }
 }
 
 int expectk(ParseInfo *info, Token token, int k) {
@@ -571,6 +587,38 @@ Elem* elem(ParseInfo *info) {
 
 
     return 0;
+}
+
+// A program is simply a list of Lists
+Program* program(ParseInfo* info) {
+  Program* result = malloc(sizeof(Program));
+  List** lists = malloc(sizeof(List*) * 1024); // TODO Don't hard code
+  unsigned int listCount = 0;
+
+  while (!info->reachedEnd) {
+    while (expect(info, T_WHITESPACE)) {
+      consume(info, T_WHITESPACE);
+    }
+
+    List* resultList = list(info);
+
+    if (!resultList && !info->reachedEnd) {
+      info->didFail = 1;
+      return 0;
+    }
+
+    lists[listCount] = resultList;
+    listCount++;
+
+    while (expect(info, T_WHITESPACE)) {
+      consume(info, T_WHITESPACE);
+    }
+  }
+
+
+  result->lists = lists;
+  result->listCount = listCount;
+  return result;
 }
 
 char* elemIdentName(Elem* elem) {
