@@ -190,6 +190,9 @@ void printWatList(WatElem* wat) {
 void printWatElem(WatElem* wat) {
   switch (wat->type) {
   case WAT_VAR:
+    printf("$");
+    printWatStrType(wat);
+    break;
   case WAT_LITERAL:
   case WAT_RAW:
     printWatStrType(wat);
@@ -237,4 +240,5 @@ void emit(Program* program) {
   WatElem* wat = watList();
   programToWat(wat, program);
   printWatElem(wat);
+  printf("\n");
 }
