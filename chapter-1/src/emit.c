@@ -13,6 +13,17 @@ WatElem* watElem() {
 	return malloc(sizeof(WatElem));
 }
 
+void freeWatElem(WatElem* elem) {
+	if (elem->type == WAT_LIST) {
+		for (unsigned int i = 0; i < elem->val.list->elemCount; i++) {
+			freeWatElem(elem->val.list->elems[i]);
+		}
+		free(elem->val.list);
+	}
+
+	free(elem);
+}
+
 WatElem* watRawStr(char* str) {
 	WatElem* result = watElem();
 	result->type = WAT_RAW;
@@ -280,4 +291,5 @@ void emit(Program* program) {
 	programToWat(wat, program);
 	printWatElem(wat);
 	printf("\n");
+	freeWatElem(wat);
 }
