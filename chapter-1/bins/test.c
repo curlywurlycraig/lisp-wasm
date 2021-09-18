@@ -5,7 +5,7 @@
 #include <parse.h>
 #include <emit.h>
 
-int didFail = 0;
+int failCount = 0;
 unsigned int testCount = 0;
 
 #define ERROR(...) fprintf(stderr, "ERROR: " __VA_ARGS__)
@@ -14,7 +14,7 @@ unsigned int testCount = 0;
   testCount++;								\
   if (!strcmp(actual, expected)) {					\
     ERROR("Failed test " testName ": expected %s but was %s\n", expected, actual); \
-    didFail = 1;							\
+    failCount++;							\
   } else {								\
     printf(".");							\
   }
@@ -23,7 +23,7 @@ unsigned int testCount = 0;
   testCount++;								\
   if (actual != expected) {						\
     ERROR("Failed test " testName ": expected %d but was %d\n", expected, actual); \
-    didFail = 1;							\
+    failCount++;							\
   } else {								\
     printf(".");							\
   }
@@ -43,11 +43,11 @@ int main() {
   v = validateRange("3.", 0, 2, numberFinder);
   TEST_INT("validateRange incomplete number", PARTIAL, v);
 
-  if (!didFail) {
+  if (!failCount) {
     printf("\n\033[0;32mPASSED %d TESTS\033[0m\n", testCount);
   } else {
-    printf("\n\033[0;31mFAILED\033[0m\n");
+    printf("\n\033[0;31mFAILED %d TESTS\033[0m\n", failCount);
   }
 
-  return didFail;
+  return failCount;
 }
