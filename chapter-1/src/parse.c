@@ -491,6 +491,7 @@ TokenInfo last(ParseInfo *info) {
 
 // left recursive grammar
 // ----
+// program : list...
 // list : ( elem... )
 
 // elem : list
