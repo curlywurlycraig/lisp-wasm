@@ -10,8 +10,8 @@
 
 #define ARRAY_LENGTH(a) sizeof(a) / sizeof((a)[0])
 
-static const TokenFinder* tokenFinders;
-static unsigned int numTokenFinders;
+static const TokenFinder* tokenFinders = NULL;
+static unsigned int numTokenFinders = 0;
 
 static const CharState startState = { .id = -1, .type = START };
 static const CharState endState = { .id = -2, .type = END };
