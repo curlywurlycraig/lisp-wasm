@@ -23,6 +23,9 @@ typedef enum WatElemType {
   WAT_KW_EXPORT,
   WAT_KW_PARAM,
   WAT_KW_RESULT,
+  WAT_KW_CALL,
+  WAT_KW_I32_CONST,
+  WAT_KW_LOCAL_GET,
 
   // Raw, emitted directly as their content. Useful for contents of (wasm ...)
   // special form, as it avoids having to parse each element inside the special form as
@@ -57,6 +60,8 @@ WatElem* watKeyword(WatElemType type);
 WatElem* watType(WatElemType type);
 
 WatElem* watStringLiteral(char* name);
+
+WatElem* watNumberLiteral(int num);
 
 WatElem* watVar(char* name);
 

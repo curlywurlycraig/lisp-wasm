@@ -7,3 +7,7 @@
 (fun inc
   (x i32 i32)
   (+ 1 x))
+
+(fun sum-three
+  (x i32 y i32 z i32 i32)
+  (+ (+ x y) z))

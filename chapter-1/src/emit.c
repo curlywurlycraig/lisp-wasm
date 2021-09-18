@@ -38,6 +38,13 @@ WatElem* watStringLiteral(char* name) {
   return result;
 }
 
+WatElem* watNumberLiteral(int num) {
+  WatElem* result = watElem();
+  result->type = WAT_NUMBER_LITERAL;
+  result->val.i32 = num;
+  return result;
+}
+
 WatElem* watVar(char* name) {
   WatElem* result = watElem();
   result->type = WAT_VAR;
@@ -95,6 +102,29 @@ void watInsertAllParams(WatElem* result, List* paramList) {
   }
 }
 
+void invocationToWat(WatElem* result, List* expressionList) {
+    Elem* functionNameElem = expressionList->elems[0];
+    for (int i = 1; i < expressionList->elemCount; i++) {
+      Elem* argElem = expressionList->elems[i];
+
+      if (argElem->type == E_LIST) {
+	invocationToWat(result, argElem->val.list);
+	continue;
+      }
+
+      if (argElem->val.ident.type == I_NUM) {
+	watListInsert(result, watKeyword(WAT_KW_I32_CONST));
+	watListInsert(result, watNumberLiteral(argElem->val.ident.val.num));
+      } else if (argElem->val.ident.type == I_VAR) {
+	watListInsert(result, watKeyword(WAT_KW_LOCAL_GET));
+	watListInsert(result, watVar(argElem->val.ident.val.name));
+      }
+    }
+
+    watListInsert(result, watKeyword(WAT_KW_CALL));
+    watListInsert(result, watVar(functionNameElem->val.ident.val.name));
+}
+
 void funcToWat(WatElem* result, List* list) {
   WatElem* funcKW = watKeyword(WAT_KW_FUNC);
   watListInsert(result, funcKW);
@@ -133,11 +163,11 @@ void funcToWat(WatElem* result, List* list) {
       for (int i = 1; i < expressionList->elemCount; i++) {
 	watListInsert(result, watRawStr(elemIdentName(expressionList->elems[i])));
       }
+
+      continue;
     }
 
-    // otherwise it is a function invocation.
-    // push the arguments onto the stack, and call
-    // TODO Handle function invocation
+    invocationToWat(result, expressionList);
   }
 }
 
@@ -229,6 +259,15 @@ void printWatElem(WatElem* wat) {
     break;
   case WAT_KW_RESULT:
     printf("result");
+    break;
+  case WAT_KW_CALL:
+    printf("call");
+    break;
+  case WAT_KW_I32_CONST:
+    printf("i32.const");
+    break;
+  case WAT_KW_LOCAL_GET:
+    printf("local.get");
     break;
   default:
     // TODO Handle error case
