@@ -5,11 +5,16 @@
 #include <parse.h>
 #include <math.h>
 
-TokenFinder* tokenFinders;
-unsigned int numTokenFinders;
+#include <assert.h>
+#define BUG(assertion)  // used to temporarily disable an assert that shouldn't fail
 
-CharState startState;
-CharState endState;
+#define ARRAY_LENGTH(a) sizeof(a) / sizeof((a)[0])
+
+static const TokenFinder* tokenFinders = NULL;
+static unsigned int numTokenFinders = 0;
+
+static const CharState startState = { .id = -1, .type = START };
+static const CharState endState = { .id = -2, .type = END };
 
 CharType getCharType(char input) {
     if (input >= '0' && input <= '9') {
@@ -53,7 +58,7 @@ CharType getCharType(char input) {
     if (input == '?') {
         return LETTER;
     }
-    
+
     // WASM variables like $a
     if (input == '$') {
         return LETTER;
@@ -106,21 +111,10 @@ Validity validateRange(char* range, int startIndex, int endIndex, TokenFinder fi
 }
 
 TokenFinder makeNumberFinder() {
-    CharState numberState;
-    numberState.id = 0;
-    numberState.type = DIGIT;
-
-    CharState periodState;
-    periodState.id = 1;
-    periodState.type = PERIOD;
-
-    CharState fractionState;
-    fractionState.id = 2;
-    fractionState.type = DIGIT;
-
-    CharState hyphenState;
-    hyphenState.id = 3;
-    hyphenState.type = HYPHEN;
+    static const CharState numberState   = { .id = 0, .type = DIGIT  };
+    static const CharState periodState   = { .id = 1, .type = PERIOD };
+    static const CharState fractionState = { .id = 2, .type = DIGIT  };
+    static const CharState hyphenState   = { .id = 3, .type = HYPHEN };
 
     // number is
     // 1
@@ -129,215 +123,125 @@ TokenFinder makeNumberFinder() {
     // -12383.1583
     // NOT 123415. (don't allow trailing period)
     // <some digits><maybe period & more digits>
-    TokenFinder numberFinder;
-    numberFinder.token = T_NUMBER;
-    numberFinder.transitionCount = 9;
-    numberFinder.transitions = malloc(sizeof(StateTransition) * numberFinder.transitionCount);
-
-    numberFinder.transitions[0] = (StateTransition) {
-        .fromState = startState,
-        .toState = numberState
-    };
-    numberFinder.transitions[1] = (StateTransition) {
-        .fromState = numberState,
-        .toState = endState
-    };
-    numberFinder.transitions[2] = (StateTransition) {
-        .fromState = numberState,
-        .toState = periodState
-    };
-    numberFinder.transitions[3] = (StateTransition) {
-        .fromState = numberState,
-        .toState = numberState
-    };
-    numberFinder.transitions[4] = (StateTransition) {
-        .fromState = periodState,
-        .toState = fractionState
-    };
-    numberFinder.transitions[5] = (StateTransition) {
-        .fromState = fractionState,
-        .toState = endState
-    };
-    numberFinder.transitions[6] = (StateTransition) {
-        .fromState = fractionState,
-        .toState = fractionState
+    static const StateTransition transitions[] = {
+      [0] = { .fromState = startState,    .toState = numberState   },
+      [1] = { .fromState = numberState,   .toState = endState      },
+      [2] = { .fromState = numberState,   .toState = periodState   },
+      [3] = { .fromState = numberState,   .toState = numberState   },
+      [4] = { .fromState = periodState,   .toState = fractionState },
+      [5] = { .fromState = fractionState, .toState = endState      },
+      [6] = { .fromState = fractionState, .toState = fractionState },
+      // Neg number,
+      [7] = { .fromState = startState,    .toState = hyphenState   },
+      [8] = { .fromState = hyphenState,   .toState = numberState   },
     };
 
-    // Neg numbers
-    numberFinder.transitions[7] = (StateTransition) {
-        .fromState = startState,
-        .toState = hyphenState
+    return (TokenFinder){
+	.token = T_NUMBER,
+	.transitionCount = ARRAY_LENGTH(transitions),
+	.transitions = transitions,
     };
-    numberFinder.transitions[8] = (StateTransition) {
-        .fromState = hyphenState,
-        .toState = numberState
-    };
-
-    return numberFinder;
-}
-
-TokenFinder makeSingleCharacterFinder(CharType type, Token token) {
-    CharState charState;
-    charState.id = 0;
-    charState.type = type;
-
-    TokenFinder charFinder;
-    charFinder.token = token;
-    charFinder.transitionCount = 2;
-    charFinder.transitions = malloc(sizeof(StateTransition) * charFinder.transitionCount);
-
-    charFinder.transitions[0] = (StateTransition) {
-        .fromState = startState,
-        .toState = charState
-    };
-    charFinder.transitions[1] = (StateTransition) {
-        .fromState = charState,
-        .toState = endState
-    };
-
-    return charFinder;
-}
-
-TokenFinder makeRepeatingCharacterFinder(CharType type, Token token) {
-    CharState charState;
-    charState.id = 0;
-    charState.type = type;
-
-    TokenFinder charFinder;
-    charFinder.token = token;
-    charFinder.transitionCount = 3;
-    charFinder.transitions = malloc(sizeof(StateTransition) * charFinder.transitionCount);
-
-    charFinder.transitions[0] = (StateTransition) {
-        .fromState = startState,
-        .toState = charState
-    };
-    charFinder.transitions[1] = (StateTransition) {
-        .fromState = charState,
-        .toState = charState
-    };
-    charFinder.transitions[2] = (StateTransition) {
-        .fromState = charState,
-        .toState = endState
-    };
-
-    return charFinder;
 }
 
 TokenFinder makeIdentifierFinder() {
-    CharState charState;
-    charState.id = 0;
-    charState.type = LETTER;
+    static const CharState charState   = { .id = 0, .type = LETTER };
+    static const CharState hyphenState = { .id = 1, .type = HYPHEN };
+    static const CharState periodState = { .id = 2, .type = PERIOD };
+    static const CharState numberState = { .id = 2, .type = DIGIT  };
 
-    CharState hyphenState;
-    hyphenState.id = 1;
-    hyphenState.type = HYPHEN;
-
-    CharState periodState;
-    periodState.id = 2;
-    periodState.type = PERIOD;
-
-    CharState numberState;
-    numberState.id = 3;
-    numberState.type = DIGIT;
-
-    TokenFinder identFinder;
-    identFinder.token = T_IDENT;
-    identFinder.transitionCount = 14;
-    identFinder.transitions = malloc(sizeof(StateTransition) * identFinder.transitionCount);
-
-    identFinder.transitions[0] = (StateTransition) {
-        .fromState = startState,
-        .toState = charState
-    };
-    identFinder.transitions[1] = (StateTransition) {
-        .fromState = startState,
-        .toState = hyphenState
-    };
-    identFinder.transitions[2] = (StateTransition) {
-        .fromState = charState,
-        .toState = charState
-    };
-    identFinder.transitions[3] = (StateTransition) {
-        .fromState = charState,
-        .toState = numberState
-    };
-    identFinder.transitions[4] = (StateTransition) {
-        .fromState = numberState,
-        .toState = periodState
-    };
-    identFinder.transitions[5] = (StateTransition) {
-        .fromState = numberState,
-        .toState = hyphenState
-    };
-    identFinder.transitions[6] = (StateTransition) {
-        .fromState = numberState,
-        .toState = numberState
-    };
-    identFinder.transitions[7] = (StateTransition) {
-        .fromState = charState,
-        .toState = periodState
-    };
-    identFinder.transitions[8] = (StateTransition) {
-        .fromState = periodState,
-        .toState = charState
-    };
-    identFinder.transitions[9] = (StateTransition) {
-        .fromState = charState,
-        .toState = hyphenState 
-    };
-    identFinder.transitions[10] = (StateTransition) {
-        .fromState = charState,
-        .toState = endState
-    };
-    identFinder.transitions[11] = (StateTransition) {
-        .fromState = hyphenState,
-        .toState = charState
-    };
-    identFinder.transitions[12] = (StateTransition) {
-        .fromState = hyphenState,
-        .toState = endState
-    };
-    identFinder.transitions[13] = (StateTransition) {
-        .fromState = numberState,
-        .toState = endState
+    static const StateTransition transitions[] = {
+      [0]  = { .fromState = startState,  .toState = charState   },
+      [1]  = { .fromState = startState,  .toState = hyphenState },
+      [2]  = { .fromState = charState,   .toState = charState   },
+      [3]  = { .fromState = charState,   .toState = numberState },
+      [4]  = { .fromState = numberState, .toState = periodState },
+      [5]  = { .fromState = numberState, .toState = hyphenState },
+      [6]  = { .fromState = numberState, .toState = numberState },
+      [7]  = { .fromState = charState,   .toState = periodState },
+      [8]  = { .fromState = periodState, .toState = charState   },
+      [9]  = { .fromState = charState,   .toState = hyphenState },
+      [10] = { .fromState = charState,   .toState = endState    },
+      [11] = { .fromState = hyphenState, .toState = charState   },
+      [12] = { .fromState = hyphenState, .toState = endState    },
+      [13] = { .fromState = numberState, .toState = endState    },
     };
 
-    return identFinder;
+    return (TokenFinder){
+	.token = T_IDENT,
+	.transitionCount = ARRAY_LENGTH(transitions),
+	.transitions = transitions,
+    };
 }
 
-TokenFinder makeOpenParenFinder() {
-    return makeSingleCharacterFinder(OPEN_PAREN, T_OPEN_PAREN);
-}
+static const StateTransition openParenTransitions[] = {
+    {
+	.fromState = startState,
+	.toState = { .id = 0, .type = OPEN_PAREN }
+    },
+    {
+	.fromState = { .id = 0, .type = OPEN_PAREN },
+	.toState = endState
+    }
+};
 
-TokenFinder makeCloseParenFinder() {
-    return makeSingleCharacterFinder(CLOSE_PAREN, T_CLOSE_PAREN);
-}
+static const TokenFinder openParenFinder = {
+    .token = T_OPEN_PAREN,
+    .transitionCount = ARRAY_LENGTH(openParenTransitions),
+    .transitions = openParenTransitions
+};
 
-TokenFinder makeWhitespaceFinder() {
-    return makeRepeatingCharacterFinder(SPACE, T_WHITESPACE);
-}
+static const StateTransition closeParenTransitions[] = {
+    {
+	.fromState = startState,
+	.toState = { .id = 0, .type = CLOSE_PAREN }
+    },
+    {
+	.fromState = { .id = 0, .type = CLOSE_PAREN },
+	.toState = endState
+    }
+};
+
+static const TokenFinder closeParenFinder = {
+    .token = T_CLOSE_PAREN,
+    .transitionCount = ARRAY_LENGTH(closeParenTransitions),
+    .transitions = closeParenTransitions
+};
+
+static const StateTransition whitespaceTransitions[] = {
+    {
+	.fromState = startState,
+	.toState = { .id = 0, .type = SPACE }
+    },
+    {
+	.fromState = { .id = 0, .type = SPACE },
+	.toState   = { .id = 0, .type = SPACE }
+    },
+    {
+	.fromState = { .id = 0, .type = SPACE },
+	.toState = endState
+    }
+};
+
+static const TokenFinder whitespaceFinder = {
+    .token = T_WHITESPACE,
+    .transitionCount = ARRAY_LENGTH(whitespaceTransitions),
+    .transitions = whitespaceTransitions
+};
 
 void initTokenFinders() {
-    startState.id = -1;
-    startState.type = START;
+    TokenFinder finders[] = {
+      makeNumberFinder(),
+      whitespaceFinder,
+      openParenFinder,
+      closeParenFinder,
+      makeIdentifierFinder(),
+    };
 
-    endState.id = -2;
-    endState.type = END;
+    TokenFinder* copy = malloc(sizeof(finders));
+    memcpy(copy, finders, sizeof(finders));
 
-    numTokenFinders = 0;
-    tokenFinders = malloc(sizeof(TokenFinder) * MAX_FINDERS);
-
-    tokenFinders[0] = makeNumberFinder();
-    numTokenFinders++;
-    tokenFinders[1] = makeWhitespaceFinder();
-    numTokenFinders++;
-    tokenFinders[2] = makeOpenParenFinder();
-    numTokenFinders++;
-    tokenFinders[3] = makeCloseParenFinder();
-    numTokenFinders++;
-    tokenFinders[4] = makeIdentifierFinder();
-    numTokenFinders++;
+    numTokenFinders = ARRAY_LENGTH(finders);
+    tokenFinders = copy;
 }
 
 void tokenize(TokenizeResult* result, char* formula) {
@@ -411,6 +315,7 @@ void tokenize(TokenizeResult* result, char* formula) {
 // Parse
 
 TokenInfo lookAhead(ParseInfo *info, int ahead) {
+    BUG(assert(info->tokenIndex + ahead < info->tokenizeResult->tokenCount));
     return info->tokenizeResult->tokens[info->tokenIndex + ahead];
 }
 
