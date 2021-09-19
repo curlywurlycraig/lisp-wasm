@@ -43,6 +43,19 @@ int main() {
 	v = validateRange("3.", 0, 2, numberFinder);
 	TEST_INT("validateRange incomplete number", PARTIAL, v);
 
+	v = validateRange("3123.123", 0, 8, numberFinder);
+	TEST_INT("validateRange full number with fraction", VALID, v);
+
+	v = validateRange("3123", 0, 4, numberFinder);
+	TEST_INT("validateRange full number without fraction", VALID, v);
+
+	v = validateRange("-3123", 0, 5, numberFinder);
+	TEST_INT("validateRange negative number without fraction", VALID, v);
+
+	v = validateRange("-3123.123", 0, 9, numberFinder);
+	TEST_INT("validateRange negative number with fraction", VALID, v);
+
+
   if (!failCount) {
     printf("\n\033[0;32mPASSED %d TESTS\033[0m\n", testCount);
   } else {
