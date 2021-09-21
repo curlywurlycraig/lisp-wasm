@@ -1,10 +1,10 @@
 (macro if
   (cond ba bb)
-  (wasm cond
+  (wasm (unwasm cond)
   	if (result i32)
-  	   ba
+  	   (unwasm ba)
 	else
-	   bb
+	   (unwasm bb)
 	end))
 
 (fun <

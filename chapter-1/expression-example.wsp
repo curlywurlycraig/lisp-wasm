@@ -1,0 +1,17 @@
+(fun always-one
+  (i32)
+  1)
+
+(fun always-input
+  (x i32 i32)
+  x)
+
+(fun +
+  (x i32 y i32 i32)
+  (wasm local.get $x
+        local.get $y
+        i32.add))
+
+(fun one-two-three
+  (i32)
+  (+ 0 (+ 1 (+ 2 (+ 3 0)))))
