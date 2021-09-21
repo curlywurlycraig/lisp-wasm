@@ -113,27 +113,35 @@ void watInsertAllParams(WatElem* result, List* paramList) {
 	}
 }
 
-void invocationToWat(WatElem* result, List* expressionList) {
-	Elem* functionNameElem = expressionList->elems[0];
-	for (int i = 1; i < expressionList->elemCount; i++) {
-		Elem* argElem = expressionList->elems[i];
+void evaluationToWat(WatElem* result, Elem* elem) {
+	if (elem->type == E_LIST) {
+		List* expressionList = elemList(elem);
+		Elem* functionNameElem = expressionList->elems[0];
 
-		if (argElem->type == E_LIST) {
-			invocationToWat(result, argElem->val.list);
-			continue;
+		if (!strcmp(elemIdentName(functionNameElem), "wasm")) {
+			// WASM special form: just copy contents directly
+			for (int i = 1; i < expressionList->elemCount; i++) {
+				watListInsert(result, watRawStr(elemIdentName(expressionList->elems[i])));
+			}
+
+			return;
 		}
 
-		if (argElem->val.ident.type == I_NUM) {
-			watListInsert(result, watKeyword(WAT_KW_I32_CONST));
-			watListInsert(result, watNumberLiteral(argElem->val.ident.val.num));
-		} else if (argElem->val.ident.type == I_VAR) {
-			watListInsert(result, watKeyword(WAT_KW_LOCAL_GET));
-			watListInsert(result, watVar(argElem->val.ident.val.name));
+		// Function invocation
+		for (int i = 1; i < expressionList->elemCount; i++) {
+			Elem* argElem = expressionList->elems[i];
+			evaluationToWat(result, argElem);
 		}
+
+		watListInsert(result, watKeyword(WAT_KW_CALL));
+		watListInsert(result, watVar(functionNameElem->val.ident.val.name));
+	} else if (elem->val.ident.type == I_NUM) {
+		watListInsert(result, watKeyword(WAT_KW_I32_CONST));
+		watListInsert(result, watNumberLiteral(elem->val.ident.val.num));
+	} else if (elem->val.ident.type == I_VAR) {
+		watListInsert(result, watKeyword(WAT_KW_LOCAL_GET));
+		watListInsert(result, watVar(elem->val.ident.val.name));
 	}
-
-	watListInsert(result, watKeyword(WAT_KW_CALL));
-	watListInsert(result, watVar(functionNameElem->val.ident.val.name));
 }
 
 void funcToWat(WatElem* result, List* list) {
@@ -158,27 +166,9 @@ void funcToWat(WatElem* result, List* list) {
 	// Add all the list elems to the funcList body
 	for (int i = 3; i < list->elemCount; i++) {
 		Elem* expressionElem = list->elems[i];
-		List* expressionList = elemList(expressionElem);
+		evaluationToWat(result, expressionElem);
 
-		// Two cases initially:
-		// 1. macro call ("wasm")
-		// 2. function invocation
-
-		// Check the first identifier
-		// if the element is "wasm", just straight up copy
-
-		if (!strcmp(elemIdentName(expressionList->elems[0]), "wasm")) {
-			// add the rest, bypassing any categorisation (just using raw).
-			// TODO Consider actually parsing each one. This would be nice
-			// because we could show errors for malformed WASM
-			for (int i = 1; i < expressionList->elemCount; i++) {
-				watListInsert(result, watRawStr(elemIdentName(expressionList->elems[i])));
-			}
-
-			continue;
-		}
-
-		invocationToWat(result, expressionList);
+		// TODO If it is not the last item in the list, drop the returned value of the evaluation from the stack
 	}
 }
 

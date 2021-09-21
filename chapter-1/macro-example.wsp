@@ -1,0 +1,20 @@
+(macro if
+  (cond ba bb)
+  (wasm cond
+  	if (result i32)
+  	   ba
+	else
+	   bb
+	end))
+
+(fun <
+  (x i32 y i32 i32)
+  (wasm local.get $x
+  	local.get $y
+	i32.lt_s))
+
+(fun lt-example
+  (x i32 i32)
+  (if (< 10 x)
+      x
+      10))
