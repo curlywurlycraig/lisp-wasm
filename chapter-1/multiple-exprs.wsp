@@ -1,0 +1,11 @@
+(fun +
+  (x i32 y i32 i32)
+  (wasm local.get $x
+        local.get $y
+        i32.add))
+
+(fn long-body
+  (i32)
+  (+ 1 2)
+  (+ 3 4)
+  (* 1 10))

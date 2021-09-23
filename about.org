@@ -1,6 +1,14 @@
 Idea: a compiler from lisp to wasm.
 
-* Chapter 1
+* Next steps
+** TODO Pass strings as arguments
+** TODO Type checking
+   may need to partly solve when passing strings
+** TODO Macro expansion
+** TODO JS interop
+** TODO Improve C memory management
+
+* DONE Emitter
 _Just a simple emitter_
 
 Objective: Write a very simple program that reads a simple example of our lang
@@ -12,37 +20,28 @@ example input
 
 #+BEGIN_SRC clojure
 (defn add
-  "Docstring"
-  [a b]
+  (a i32 b i32 i32)
   (+ a b))
 #+END_SRC
 
-Expected output 
+Expected output
 
 #+BEGIN_SRC lisp (wat)
 (module
-  (func (export "add") (param i32 i32) (result i32)
+  (func $add (export "add") (param i32 i32) (result i32)
     local.get 0
     local.get 1
     i32.add))
 #+END_SRC
 
-Questions: types... it's compiled. How to keep it simple?
-
-Possibilities
-#+BEGIN_SRC clojure
-(defn add
-  "Docstring"
-  [[a:i32 b:i32] i32]
-  (+ a b))
-#+END_SRC
+* TODO Macros, strings, heap
 
 * Cool thoughts
 
 ** JIT compilation
    The compiler itself executes in wasm so the browser (esp. in debugging) can
   do things like start a repl, or eval from user input etc.
-  
+
 ** JS interop
 
    Make it really easy to pass through function references (already
