@@ -22,8 +22,6 @@ For example, implementation of an if statement, whose usage looks like the follo
   (if (< 10 x)
       x
       10))
-
-
 ```
 
 We can achieve the above by introducting a macro expansion step before emitting. Simply replace the macro call with the transformed AST. Note that in the above, `unwasm` means to temporarily "turn off" the wasm pass-through mechanism that the `wasm` special form provides.
