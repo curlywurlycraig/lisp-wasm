@@ -10,7 +10,7 @@ Consider the following function:
 ```
 (fun past-tense
   (verb String String)
-  (str verb "ed"))
+  (cat verb "ed"))
 ```
 
 This function adds the "-ed" suffix.
@@ -40,11 +40,11 @@ And if there is more than one string literal, like in:
 ```
 (fun past-tense
   (verb String String)
-  (str verb "ed"))
+  (cat verb "ed"))
 
 (fun present-tense
   (verb String String)
-  (str verb "ing"))
+  (cat verb "ing"))
 ```
 
 then something like the following would be emitted:
@@ -69,3 +69,20 @@ Alternatively, all of the string literals could simply be emitted as the same `(
 ```
 
 But how to actually access the literals? These would be represented as i32 values representing the offset of the data. So the body of the functions would replace the appearance of "ing" and "ed" with the indices (pointers, essentially, to data in the imported memory (heap)).
+
+The other aspect to consider is that a `String` has some length. We could do something like Rust slices, whereby a `String` under the hood stores a pointer to the first character, and a length.
+
+Strings are already an interesting challenge, because it requires heap allocation (and therefore freeing) some kind of pointer dereferencing logic, immutability, etc.
+And also declaring data structures. Something like:
+
+```
+(struct String
+  (ptr i32)
+  (length i32))
+```
+
+[Multiple values returned](https://github.com/WebAssembly/proposals) from functions is not yet ready, so it would be safest in the short run to heap allocate return values that are structures (like `Box`ed values in Rust).
+
+A good first step is to try having a function be able to return a struct (by allocating it on the heap and returning its pointer).
+
+## Heap storage, clearing stored values, GC, etc
