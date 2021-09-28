@@ -85,4 +85,28 @@ And also declaring data structures. Something like:
 
 A good first step is to try having a function be able to return a struct (by allocating it on the heap and returning its pointer).
 
-## Heap storage, clearing stored values, GC, etc
+Some ideas:
+
+### Avoid manual allocation
+
+```
+(struct String
+  (ptr i32)
+  (length i32))
+
+(fun make-string
+  (ptr i32 length i32 i32)
+  ...)
+```
+
+### Manual allocation
+
+```
+(struct String
+  (ptr i32)
+  (length i32))
+
+(fun make-string
+  (ptr i32 length i32 i32)
+  ...)
+```

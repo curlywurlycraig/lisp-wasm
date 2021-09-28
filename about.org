@@ -2,11 +2,15 @@ Idea: a compiler from lisp to wasm.
 
 * Next steps
 ** TODO Pass strings as arguments
+   (and return them from functions)
 ** TODO Type checking
    may need to partly solve when passing strings
 ** TODO Macro expansion
 ** TODO JS interop
+   Reference types will be useful
+   https://github.com/WebAssembly/reference-types
 ** TODO Improve C memory management
+   E.g. free things.
 
 * DONE Emitter
 _Just a simple emitter_

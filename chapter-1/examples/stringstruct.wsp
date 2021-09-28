@@ -1,0 +1,13 @@
+(struct String
+  (ptr i32)
+  (length i32))
+
+(fun make-string
+  (ptr i32 length i32 i32)
+  (wasm local.get $ptr
+  	i32.const 10
+  	i32.store
+	local.get $length
+	i32.const 11
+	i32.store
+	i32.const 10))
